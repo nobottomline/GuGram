@@ -8776,3 +8776,26 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 "lng_folder_archive_status" = "ZIP archive";
 
 // Keys finished
+
+"lng_video_export_download_all" = "Download all chat videos";
+"lng_video_export_title" = "Chat video downloads";
+"lng_video_export_choose_folder" = "Choose a folder for chat videos";
+"lng_video_export_hint" = "Choose a chat from its menu and download all its videos. Each chat gets a separate folder. Closing this window keeps downloads running. Select the same folder again after restarting Telegram to keep completed files and retry the rest.";
+"lng_video_export_bypass" = "Bypass copy protection for accessible media";
+"lng_video_export_chat" = "Chat";
+"lng_video_export_status" = "Status";
+"lng_video_export_progress" = "Progress";
+"lng_video_export_details" = "Details";
+"lng_video_export_preparing" = "Preparing folder";
+"lng_video_export_scanning" = "Reading history";
+"lng_video_export_downloading" = "Downloading";
+"lng_video_export_paused" = "Paused";
+"lng_video_export_cancelled" = "Cancelled";
+"lng_video_export_complete" = "Complete";
+"lng_video_export_failed" = "Needs attention";
+"lng_video_export_pause" = "Pause";
+"lng_video_export_resume" = "Resume";
+"lng_video_export_cancel" = "Cancel";
+"lng_video_export_retry" = "Retry";
+"lng_video_export_open_folder" = "Open folder";
+"lng_video_export_hide" = "Hide window";

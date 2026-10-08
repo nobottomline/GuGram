@@ -84,6 +84,10 @@ namespace Ui {
 struct ColorIndicesCompressed;
 } // namespace Ui
 
+namespace Export {
+class VideoManager;
+} // namespace Export
+
 namespace Main {
 
 class Account;
@@ -192,6 +196,8 @@ public:
 	[[nodiscard]] Api::SendProgressManager &sendProgressManager() const {
 		return *_sendProgressManager;
 	}
+	[[nodiscard]] Export::VideoManager &videoExports();
+
 	[[nodiscard]] Storage::DownloadManagerMtproto &downloader() const {
 		return *_downloader;
 	}
@@ -367,6 +373,7 @@ private:
 	QByteArray _tmpPassword;
 	TimeId _tmpPasswordValidUntil = 0;
 
+	std::unique_ptr<Export::VideoManager> _videoExports;
 	rpl::lifetime _lifetime;
 
 };

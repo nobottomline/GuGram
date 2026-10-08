@@ -3831,6 +3831,19 @@ void Account::readPrefs() {
 
 // Define your own pref types in the similar way.
 template <>
+std::optional<QString> Account::readPrefImpl<QString>(std::string_view key) {
+	if (const auto data = readPrefGeneric(key)) {
+		return QString::fromUtf8(*data);
+	}
+	return {};
+}
+
+template <>
+void Account::writePrefImpl<QString>(std::string_view key, QString value) {
+	writePrefGeneric(key, value.toUtf8());
+}
+
+template <>
 std::optional<bool> Account::readPrefImpl<bool>(std::string_view key) {
 	if (const auto data = readPrefGeneric(key)) {
 		return !data->isEmpty();

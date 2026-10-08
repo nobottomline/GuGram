@@ -122,6 +122,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "core/application.h"
 #include "core/ui_integration.h"
 #include "export/export_manager.h"
+#include "export/export_video_manager.h"
 #include "boxes/peers/edit_participants_box.h"
 #include "boxes/peers/edit_peer_info_box.h"
 #include "boxes/peers/manage_community_box.h"
@@ -1058,6 +1059,15 @@ void Filler::addDirectMessages() {
 }
 
 void Filler::addExportChat() {
+	const auto videoPeer = _peer;
+	_addAction(
+		tr::lng_video_export_download_all(tr::now),
+		[=] { videoPeer->session().videoExports().chooseFolder(videoPeer); },
+		&st::menuIconDownload);
+	_addAction(
+		tr::lng_video_export_title(tr::now),
+		[=] { videoPeer->session().videoExports().show(); },
+		&st::menuIconExport);
 	if (!_peer->canExportChatHistory()) {
 		return;
 	}

@@ -8,6 +8,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "main/main_session.h"
 
 #include "apiwrap.h"
+#include "export/export_video_manager.h"
 #include "api/api_peer_colors.h"
 #include "api/api_updates.h"
 #include "api/api_user_privacy.h"
@@ -310,16 +311,25 @@ QByteArray Session::validTmpPassword() const {
 
 // Can be called only right before ~Session.
 void Session::finishLogout() {
+	_videoExports = nullptr;
 	unlockTerms();
 	data().clear();
 	data().clearLocalStorage();
 }
 
 Session::~Session() {
+	_videoExports = nullptr;
 	unlockTerms();
 	data().clear();
 	ClickHandler::clearActive();
 	ClickHandler::unpressed();
+}
+
+Export::VideoManager &Session::videoExports() {
+	if (!_videoExports) {
+		_videoExports = std::make_unique<Export::VideoManager>(this);
+	}
+	return *_videoExports;
 }
 
 Account &Session::account() const {

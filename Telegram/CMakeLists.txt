@@ -900,6 +900,10 @@ PRIVATE
     editor/video/video_timeline.cpp
     editor/video/video_timeline.h
     export/export_manager.cpp
+    export/export_video_manager.cpp
+    export/export_video_manager.h
+    export/export_video_files.cpp
+    export/export_video_files.h
     export/export_manager.h
     export/view/export_view_content.cpp
     export/view/export_view_content.h
