@@ -1939,6 +1939,15 @@ void Message::draw(Painter &p, const PaintContext &context) const {
 				});
 		}
 
+		if (item->isDeletedByOther()) {
+			p.fillRect(
+				g,
+				QColor(st::attentionButtonFg->c.red(),
+					st::attentionButtonFg->c.green(),
+					st::attentionButtonFg->c.blue(),
+					45));
+		}
+
 		auto inner = g;
 		paintCommentsButton(p, inner, context);
 
@@ -3007,7 +3016,10 @@ void Message::paintText(
 		return;
 	}
 	const auto stm = context.messageStyle();
-	p.setPen(stm->historyTextFg);
+	const auto item = data();
+	p.setPen(item->isDeletedByOther()
+		? st::attentionButtonFg
+		: stm->historyTextFg);
 	p.setFont(st::msgFont);
 	if (const auto botTop = Get<FakeBotAboutTop>()) {
 		botTop->text.drawLeftElided(

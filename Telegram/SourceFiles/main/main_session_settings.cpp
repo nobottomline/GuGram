@@ -23,7 +23,7 @@ namespace {
 
 constexpr auto kLegacyCallsPeerToPeerNobody = 4;
 constexpr auto kVersionTag = -1;
-constexpr auto kVersion = 2;
+constexpr auto kVersion = 5;
 
 } // namespace
 
@@ -95,6 +95,8 @@ QByteArray SessionSettings::serialize() const {
 	for (const auto &id : _extraFavoriteReactions) {
 		size += sizeof(quint64) + Serialize::stringSize(id.emoji());
 	}
+
+	size += 2 * sizeof(qint32);
 
 	auto result = QByteArray();
 	result.reserve(size);
@@ -187,6 +189,8 @@ QByteArray SessionSettings::serialize() const {
 		for (const auto &id : _extraFavoriteReactions) {
 			stream << quint64(id.custom()) << id.emoji();
 		}
+		stream << qint32(_showDeletedMessages ? 1 : 0);
+		stream << qint32(_bypassCopyProtection ? 1 : 0);
 	}
 
 	Ensures(result.size() == size);
@@ -697,6 +701,16 @@ void SessionSettings::addFromSerialized(const QByteArray &serialized) {
 			}
 		}
 	}
+	auto showDeletedMessages = qint32(1);
+	auto bypassCopyProtection = qint32(1);
+	if (version == 3 || version == 4) {
+		if (!stream.atEnd()) {
+			stream >> showDeletedMessages;
+		}
+		if (version == 4 && !stream.atEnd()) {
+			stream >> bypassCopyProtection;
+		}
+	}
 	if (!stream.atEnd()) {
 		stream >> disableSharingBoxShowsCount;
 	}
@@ -744,6 +758,9 @@ void SessionSettings::addFromSerialized(const QByteArray &serialized) {
 				}
 			}
 		}
+	}
+	if (version >= 5 && !stream.atEnd()) {
+		stream >> showDeletedMessages >> bypassCopyProtection;
 	}
 	if (stream.status() != QDataStream::Ok) {
 		LOG(("App Error: "
@@ -808,6 +825,8 @@ void SessionSettings::addFromSerialized(const QByteArray &serialized) {
 	}
 
 	_moderateCommonGroups = std::move(moderateCommonGroups);
+	_showDeletedMessages = (showDeletedMessages == 1);
+	_bypassCopyProtection = (bypassCopyProtection == 1);
 	_disableSharingBoxShowsCount = disableSharingBoxShowsCount;
 	_phoneNumberHidden = (phoneNumberHidden == 1);
 	_extraFavoriteReactions = std::move(extraFavoriteReactions);

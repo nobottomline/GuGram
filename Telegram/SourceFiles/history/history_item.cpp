@@ -2295,6 +2295,18 @@ void HistoryItem::destroy() {
 	_history->destroyMessage(this);
 }
 
+void HistoryItem::markAsDeletedByOther() {
+	if (_deletedByOther) {
+		return;
+	}
+	_deletedByOther = true;
+	_history->owner().session().changes().messageUpdated(
+		this,
+		Data::MessageUpdate::Flag::Edited);
+	refreshMainView();
+	invalidateChatListEntry();
+}
+
 not_null<Data::Thread*> HistoryItem::notificationThread() const {
 	if (const auto rootId = topicRootId()) {
 		if (const auto forum = _history->asForum()) {
@@ -3258,10 +3270,16 @@ bool HistoryItem::canStopPoll() const {
 }
 
 bool HistoryItem::forbidsForward() const {
+	if (_history->session().settings().bypassCopyProtection()) {
+		return false;
+	}
 	return (_flags & MessageFlag::NoForwards);
 }
 
 bool HistoryItem::forbidsSaving() const {
+	if (_history->session().settings().bypassCopyProtection()) {
+		return false;
+	}
 	if (forbidsForward()) {
 		return true;
 	} else if (_media && _media->ttlSeconds()) {

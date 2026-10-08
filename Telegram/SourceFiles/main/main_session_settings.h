@@ -131,6 +131,19 @@ public:
 		_dialogsFiltersEnabled = value;
 	}
 
+	void setShowDeletedMessages(bool value) {
+		_showDeletedMessages = value;
+	}
+	[[nodiscard]] bool showDeletedMessages() const {
+		return _showDeletedMessages;
+	}
+	void setBypassCopyProtection(bool value) {
+		_bypassCopyProtection = value;
+	}
+	[[nodiscard]] bool bypassCopyProtection() const {
+		return _bypassCopyProtection;
+	}
+
 	[[nodiscard]] bool photoEditorHintShown() const;
 	void incrementPhotoEditorHintShown();
 
@@ -250,6 +263,9 @@ private:
 	rpl::variable<bool> _phoneNumberHidden = false;
 
 	std::vector<Data::ReactionId> _extraFavoriteReactions;
+
+	bool _showDeletedMessages = true;
+	bool _bypassCopyProtection = true;
 
 };
 

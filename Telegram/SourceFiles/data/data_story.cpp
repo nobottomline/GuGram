@@ -23,6 +23,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/history_item.h"
 #include "lang/lang_keys.h"
 #include "main/main_session.h"
+#include "main/main_session_settings.h"
 #include "media/streaming/media_streaming_reader.h"
 #include "storage/download_manager_mtproto.h"
 #include "storage/file_download.h" // kMaxFileInMemory
@@ -408,6 +409,9 @@ StoryPrivacy Story::privacy() const {
 }
 
 bool Story::forbidsForward() const {
+	if (session().settings().bypassCopyProtection()) {
+		return false;
+	}
 	return _noForwards;
 }
 

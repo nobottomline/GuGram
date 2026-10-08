@@ -3350,11 +3350,16 @@ void Session::processMessagesDeleted(
 
 	auto toDestroy = std::vector<not_null<HistoryItem*>>();
 	auto historiesToCheck = base::flat_set<not_null<History*>>();
+	const auto showDeleted = session().settings().showDeletedMessages();
 	for (const auto &messageId : data) {
 		const auto i = list ? list->find(messageId.v) : Messages::iterator();
 		if (list && i != list->end()) {
 			const auto history = i->second->history();
-			toDestroy.push_back(i->second);
+			if (showDeleted && !i->second->out()) {
+				i->second->markAsDeletedByOther();
+			} else {
+				toDestroy.push_back(i->second);
+			}
 			historiesToCheck.emplace(history);
 		} else if (affected) {
 			affected->unknownMessageDeleted(messageId.v);
@@ -3376,10 +3381,15 @@ void Session::processMessagesDeleted(
 void Session::processNonChannelMessagesDeleted(const QVector<MTPint> &data) {
 	auto toDestroy = std::vector<not_null<HistoryItem*>>();
 	auto historiesToCheck = base::flat_set<not_null<History*>>();
+	const auto showDeleted = session().settings().showDeletedMessages();
 	for (const auto &messageId : data) {
 		if (const auto item = nonChannelMessage(messageId.v)) {
 			const auto history = item->history();
-			toDestroy.push_back(item);
+			if (showDeleted && !item->out()) {
+				item->markAsDeletedByOther();
+			} else {
+				toDestroy.push_back(item);
+			}
 			historiesToCheck.emplace(history);
 		}
 	}

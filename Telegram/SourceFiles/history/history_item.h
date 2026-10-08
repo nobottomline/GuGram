@@ -254,6 +254,10 @@ public:
 	void invalidateChatListEntry();
 
 	void destroy();
+	[[nodiscard]] bool isDeletedByOther() const {
+		return _deletedByOther;
+	}
+	void markAsDeletedByOther();
 	[[nodiscard]] bool out() const {
 		return _flags & MessageFlag::Outgoing;
 	}
@@ -811,6 +815,7 @@ private:
 	const not_null<PeerData*> _from;
 	mutable PeerData *_displayFrom = nullptr;
 	mutable MessageFlags _flags = 0;
+	bool _deletedByOther = false;
 
 	TextWithEntities _text;
 
