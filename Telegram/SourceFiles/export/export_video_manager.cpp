@@ -149,6 +149,7 @@ private:
 	void resume(Job &job);
 	void refresh();
 	void refreshStates();
+	void applyStates(const VideoExportStates &states, bool overwrite);
 	Job *selected();
 
 	const not_null<Main::Session*> _session;
@@ -167,6 +168,7 @@ private:
 	QMap<DocumentId, QString> _completed;
 	QSet<DocumentId> _activeDocuments;
 	VideoExportStates _states;
+	std::shared_ptr<std::atomic<bool>> _restoreCancelled = std::make_shared<std::atomic<bool>>(false);
 	bool _restoreAnnounced = false;
 	int _roundRobin = 0;
 
@@ -179,6 +181,15 @@ VideoManager::Impl::Impl(not_null<Main::Session*> session)
 		QString::number(session->uniqueId()),
 		session->local().readPref<QString>("video-export-statuses"));
 	_workers.setMaxThreadCount(kParallelDownloads);
+	const auto parent = session->local().readPref<QString>("video-export-parent");
+	if (!parent.isEmpty()) {
+		const auto account = QString::number(session->uniqueId());
+		const auto cancelled = _restoreCancelled;
+		_workers.start([=, weak = base::make_weak(this)] {
+			const auto states = ImportVideoExportStates(parent, account, *cancelled);
+			crl::on_main(weak, [=] { applyStates(states, false); });
+		});
+	}
 	_clock.start();
 	QObject::connect(&_timer, &QTimer::timeout, [=] {
 		pump();
@@ -189,6 +200,7 @@ VideoManager::Impl::Impl(not_null<Main::Session*> session)
 
 VideoManager::Impl::~Impl() {
 	_timer.stop();
+	_restoreCancelled->store(true);
 	_panel = nullptr;
 	for (const auto &job : _jobs) {
 		job->cancelled->store(true);
@@ -268,6 +280,10 @@ void VideoManager::Impl::show() {
 		_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
 		_table->verticalHeader()->hide();
 		_table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+		_table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Interactive);
+		_table->setColumnWidth(0, st::boxWideWidth / 2);
+		_table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
+		_table->setColumnWidth(2, st::boxWideWidth / 3);
 		_table->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
 		layout->addWidget(_table);
 		auto buttons = new QHBoxLayout();
@@ -375,6 +391,10 @@ void VideoManager::Impl::prepare(Job &value) {
 	_workers.start([=, weak = base::make_weak(this)] {
 		const auto folder = VideoFiles::ChatFolder(
 			parent, initial.account, initial.peer, initial.title);
+		crl::on_main(weak, [=] {
+			job->folder = folder;
+			refresh();
+		});
 		auto manifest = initial;
 		auto error = QString();
 		auto lock = std::make_shared<std::unique_ptr<QLockFile>>();
@@ -990,26 +1010,27 @@ void VideoManager::Impl::refreshStates() {
 		const auto key = QString::number(job->peer->id.value);
 		current[key] = CombineVideoExportStates(current.value(key, State::None), state);
 	}
-	auto changed = false;
-	for (auto i = current.begin(); i != current.end(); ++i) {
-		changed |= (_states.value(i.key(), State::None) != i.value());
+	applyStates(current, true);
+}
+
+void VideoManager::Impl::applyStates(const VideoExportStates &states, bool overwrite) {
+	auto changed = QStringList();
+	for (auto i = states.begin(); i != states.end(); ++i) {
+		if ((!_states.contains(i.key()) || overwrite)
+			&& _states.value(i.key(), State::None) != i.value()) {
+			_states.insert(i.key(), i.value());
+			changed.push_back(i.key());
+		}
 	}
-	if (!changed) {
+	if (changed.isEmpty()) {
 		return;
-	}
-	const auto previous = _states;
-	for (auto i = current.begin(); i != current.end(); ++i) {
-		_states.insert(i.key(), i.value());
 	}
 	_session->local().writePref<QString>(
 		"video-export-statuses",
 		SaveVideoExportStates(QString::number(_session->uniqueId()), _states));
-	for (const auto &job : _jobs) {
-		const auto key = QString::number(job->peer->id.value);
-		if (previous.value(key, State::None) != _states.value(key)) {
-			if (const auto history = _session->data().historyLoaded(job->peer)) {
-				history->updateChatListEntry();
-			}
+	for (const auto &key : changed) {
+		if (const auto history = _session->data().historyLoaded(PeerId(key.toULongLong()))) {
+			history->updateChatListEntry();
 		}
 	}
 }

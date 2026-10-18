@@ -94,6 +94,38 @@ int main(int argc, char **argv) {
 		"renaming a legacy chat must not lose its existing completed files");
 	Require(VideoFiles::ChatFolder(parent, "202", "456", "Legacy chat") != legacy,
 		"another account must not share a legacy export folder");
+	auto completed = manifestA;
+	completed.state = "complete";
+	completed.scanComplete = true;
+	Require(VideoFiles::Write(folderA, completed).isEmpty(), "save earlier completed export");
+	auto cancelled = old;
+	cancelled.state = "cancelled";
+	Require(VideoFiles::Write(legacy, cancelled).isEmpty(), "save earlier cancelled export");
+	const auto foreign = QDir(parent).filePath("Foreign chat_777");
+	Require(QDir().mkpath(foreign), "create another account legacy destination");
+	auto foreignManifest = VideoFiles::Manifest{ "202", "777", "Foreign chat", "complete", true };
+	Require(VideoFiles::Write(foreign, foreignManifest).isEmpty(), "save foreign legacy export");
+	const auto interrupted = QDir(parent).filePath("Interrupted_789");
+	Require(QDir().mkpath(interrupted), "create interrupted export");
+	const auto interruptedManifest = VideoFiles::Manifest{ "101", "789", "Interrupted", "complete", false };
+	Require(VideoFiles::Write(interrupted, interruptedManifest).isEmpty(), "save inconsistent completion receipt");
+	const auto failedFolder = QDir(parent).filePath("Failed_999");
+	Require(QDir().mkpath(failedFolder), "create failed export");
+	auto failedManifest = VideoFiles::Manifest{ "101", "999", "Failed", "complete", true };
+	const auto failedVideo = VideoFiles::Entry{ "999", "1", "42", "video.mp4", 3, "failed" };
+	failedManifest.entries.insert(VideoFiles::Key(failedVideo), failedVideo);
+	Require(VideoFiles::Write(failedFolder, failedManifest).isEmpty(), "save failed video receipt");
+	auto importCancelled = std::atomic<bool>(false);
+	const auto imported = ImportVideoExportStates(parent, "101", importCancelled);
+	Require(imported.value("123") == State::Complete, "import completed exports made by the older app");
+	Require(imported.value("456") == State::Cancelled, "import older cancelled exports");
+	Require(imported.value("789") == State::Paused, "never import an incomplete scan as completed");
+	Require(imported.value("999") == State::Failed, "failed files override a stale complete receipt");
+	Require(!imported.contains("777"), "do not import another account's legacy markers");
+	Require(ImportVideoExportStates(parent, "202", importCancelled).value("777") == State::Complete,
+		"each account imports only its own receipts");
+	importCancelled.store(true);
+	Require(ImportVideoExportStates(parent, "101", importCancelled).isEmpty(), "cancel marker migration on session shutdown");
 
 	auto preview = QImage(360, 200, QImage::Format_ARGB32_Premultiplied);
 	preview.fill(QColor("#ffffff"));

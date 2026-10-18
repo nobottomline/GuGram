@@ -2,6 +2,7 @@
 
 #include <QtCore/QMap>
 #include <QtCore/QString>
+#include <atomic>
 
 namespace Export {
 
@@ -27,5 +28,9 @@ using VideoExportStates = QMap<QString, VideoExportState>;
 [[nodiscard]] VideoExportStates RestoreVideoExportStates(
 	const QString &account,
 	const QString &json);
+[[nodiscard]] VideoExportStates ImportVideoExportStates(
+	const QString &parent,
+	const QString &account,
+	const std::atomic<bool> &cancelled);
 
 } // namespace Export

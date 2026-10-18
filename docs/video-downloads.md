@@ -69,6 +69,14 @@ completed state. Select the same chat and parent folder to resume using verified
 completed files. A green badge records the last export result; it is not a
 continuous audit of files moved or deleted outside the application.
 
+On upgrade, a worker also reads matching `video-export.json` receipts from the
+last selected parent folder, including legacy and account-scoped subfolders.
+This restores older export markers without re-downloading media. It imports only
+this account's receipts, maps unfinished work to pause, and never replaces an
+existing cache entry or a state set by a live job. Receipts in other parent
+folders become known when those chats/folders are selected again. Import does
+not start network work.
+
 ## Design and invariants
 
 - The session owns the manager. Exports outlive chat navigation and the queue
