@@ -904,6 +904,10 @@ PRIVATE
     export/export_video_manager.h
     export/export_video_files.cpp
     export/export_video_files.h
+    export/export_video_status.cpp
+    export/export_video_status.h
+    export/export_video_badge.cpp
+    export/export_video_badge.h
     export/export_manager.h
     export/view/export_view_content.cpp
     export/view/export_view_content.h

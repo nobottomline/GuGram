@@ -268,6 +268,7 @@ Session::Session(
 	_api->requestNotifySettings(MTP_inputNotifyBroadcasts());
 
 	Core::App().downloadManager().trackSession(this);
+	crl::on_main(this, [=] { (void)videoExports(); });
 
 	appConfig().value(
 	) | rpl::on_next([=] {

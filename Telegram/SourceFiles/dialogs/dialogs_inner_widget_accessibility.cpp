@@ -27,6 +27,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/history_item_helpers.h"
 #include "lang/lang_keys.h"
 #include "main/main_session.h"
+#include "export/export_video_manager.h"
 #include "ui/text/format_values.h"
 
 namespace Dialogs {
@@ -198,6 +199,13 @@ QString RowAccessibilityName(
 	}
 
 	parts << peer->name();
+	if (const auto exporter = peer->session().videoExportsIfExists()) {
+		const auto state = exporter->state(peer);
+		if (state != Export::VideoExportState::None) {
+			parts << tr::lng_video_export_title(tr::now)
+				+ u": "_q + Export::VideoManager::StateText(state);
+		}
+	}
 
 	if (peer->isScam()) {
 		parts << tr::lng_sr_chat_scam(tr::now);

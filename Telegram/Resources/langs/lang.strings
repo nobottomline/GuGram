@@ -8799,5 +8799,6 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 "lng_video_export_retry" = "Retry";
 "lng_video_export_open_folder" = "Open folder";
 "lng_video_export_hide" = "Hide window";
+"lng_video_export_chat_id" = "Chat ID";
 
 "lng_settings_show_restricted_content" = "Show restricted chats and messages";

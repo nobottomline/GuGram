@@ -6,6 +6,8 @@
 #include "data/data_session.h"
 #include "data/data_peer.h"
 #include "data/data_chat.h"
+#include "data/data_user.h"
+#include "history/history.h"
 #include "data/data_document.h"
 #include "data/data_file_origin.h"
 #include "storage/file_download_mtproto.h"
@@ -49,18 +51,11 @@ QString Bytes(qint64 value) {
 	return QString::number(value / (1024. * 1024.), 'f', 1) + u" MB"_q;
 }
 
-enum class State {
-	Preparing,
-	Scanning,
-	Downloading,
-	Paused,
-	Cancelled,
-	Complete,
-	Failed,
-};
+using State = VideoExportState;
 
-QString StateText(State state) {
+QString VideoStateText(State state) {
 	switch (state) {
+	case State::None: return QString();
 	case State::Preparing: return tr::lng_video_export_preparing(tr::now);
 	case State::Scanning: return tr::lng_video_export_scanning(tr::now);
 	case State::Downloading: return tr::lng_video_export_downloading(tr::now);
@@ -74,6 +69,7 @@ QString StateText(State state) {
 
 QString StateKey(State state) {
 	switch (state) {
+	case State::None: return u"none"_q;
 	case State::Preparing: return u"preparing"_q;
 	case State::Scanning: return u"scanning"_q;
 	case State::Downloading: return u"downloading"_q;
@@ -93,6 +89,7 @@ public:
 	~Impl();
 	void chooseFolder(not_null<PeerData*> peer);
 	void show();
+	[[nodiscard]] State state(not_null<PeerData*> peer) const;
 
 private:
 	struct Video {
@@ -107,6 +104,7 @@ private:
 		}
 
 		not_null<PeerData*> peer;
+		QString parent;
 		QString folder;
 		VideoFiles::Manifest manifest;
 		std::vector<Video> videos;
@@ -150,6 +148,7 @@ private:
 	void stop(Job &job, State state);
 	void resume(Job &job);
 	void refresh();
+	void refreshStates();
 	Job *selected();
 
 	const not_null<Main::Session*> _session;
@@ -167,6 +166,8 @@ private:
 	std::vector<std::unique_ptr<Job>> _jobs;
 	QMap<DocumentId, QString> _completed;
 	QSet<DocumentId> _activeDocuments;
+	VideoExportStates _states;
+	bool _restoreAnnounced = false;
 	int _roundRobin = 0;
 
 };
@@ -174,6 +175,9 @@ private:
 VideoManager::Impl::Impl(not_null<Main::Session*> session)
 : _session(session)
 , _api(&session->mtp()) {
+	_states = RestoreVideoExportStates(
+		QString::number(session->uniqueId()),
+		session->local().readPref<QString>("video-export-statuses"));
 	_workers.setMaxThreadCount(kParallelDownloads);
 	_clock.start();
 	QObject::connect(&_timer, &QTimer::timeout, [=] {
@@ -215,7 +219,9 @@ void VideoManager::Impl::show() {
 	_timer.start(250);
 	if (!_panel) {
 		_panel = std::make_unique<QDialog>();
-		_panel->setWindowTitle(tr::lng_video_export_title(tr::now));
+		_panel->setWindowTitle(tr::lng_video_export_title(tr::now)
+			+ u" — "_q + _session->user()->name()
+			+ u" ["_q + QString::number(_session->uniqueId()) + ']');
 		_panel->setWindowModality(Qt::NonModal);
 		_panel->resize(2 * st::boxWideWidth, st::boxWideWidth);
 		_panel->setFont(st::normalFont->f);
@@ -232,6 +238,14 @@ void VideoManager::Impl::show() {
 		auto hint = new QLabel(tr::lng_video_export_hint(tr::now), _panel.get());
 		hint->setWordWrap(true);
 		layout->addWidget(hint);
+		auto legend = new QLabel(
+			u"↓ "_q + VideoStateText(State::Downloading)
+			+ u" · ✓ "_q + VideoStateText(State::Complete)
+			+ u" · ! "_q + VideoStateText(State::Failed)
+			+ u" · Ⅱ "_q + VideoStateText(State::Paused)
+			+ u" · × "_q + VideoStateText(State::Cancelled), _panel.get());
+		legend->setWordWrap(true);
+		layout->addWidget(legend);
 		auto bypass = new QCheckBox(tr::lng_video_export_bypass(tr::now), _panel.get());
 		bypass->setChecked(_session->settings().bypassCopyProtection());
 		QObject::connect(bypass, &QCheckBox::toggled, [=](bool enabled) {
@@ -241,12 +255,13 @@ void VideoManager::Impl::show() {
 		layout->addWidget(bypass);
 		_summary = new QLabel(_panel.get());
 		layout->addWidget(_summary);
-		_table = new QTableWidget(0, 4, _panel.get());
+		_table = new QTableWidget(0, 5, _panel.get());
 		_table->setHorizontalHeaderLabels({
 			tr::lng_video_export_chat(tr::now),
 			tr::lng_video_export_status(tr::now),
 			tr::lng_video_export_progress(tr::now),
 			tr::lng_video_export_details(tr::now),
+			tr::lng_video_export_chat_id(tr::now),
 		});
 		_table->setSelectionBehavior(QAbstractItemView::SelectRows);
 		_table->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -299,10 +314,12 @@ void VideoManager::Impl::show() {
 }
 
 void VideoManager::Impl::add(not_null<PeerData*> peer, const QString &parent) {
-	const auto folder = QDir(parent).filePath(
-		VideoFiles::SafeName(peer->name()) + '_' + QString::number(peer->id.value));
+	const auto normalizedParent = QDir::cleanPath(QDir(parent).absolutePath());
+	const auto folder = QDir(normalizedParent).filePath(
+		u"account_"_q + QString::number(_session->uniqueId()) + '/'
+		+ VideoFiles::SafeName(peer->name()) + '_' + QString::number(peer->id.value));
 	for (const auto &job : _jobs) {
-		if (job->folder == folder) {
+		if (job->peer == peer && job->parent == normalizedParent) {
 			_table->selectRow(int(&job - _jobs.data()));
 			if (!job->ioPending
 				&& (job->state == State::Complete || job->state == State::Failed || job->state == State::Cancelled)) {
@@ -313,6 +330,7 @@ void VideoManager::Impl::add(not_null<PeerData*> peer, const QString &parent) {
 	}
 	auto owned = std::make_unique<Job>(peer);
 	const auto job = owned.get();
+	job->parent = normalizedParent;
 	job->folder = folder;
 	job->cancelled = std::make_shared<std::atomic<bool>>(false);
 	job->manifest.account = QString::number(_session->uniqueId());
@@ -351,10 +369,12 @@ void VideoManager::Impl::prepare(Job &value) {
 		job->peer->name(),
 	};
 	job->ioPending = true;
-	const auto folder = job->folder;
+	const auto parent = job->parent;
 	const auto initial = job->manifest;
 	const auto cancelled = job->cancelled;
 	_workers.start([=, weak = base::make_weak(this)] {
+		const auto folder = VideoFiles::ChatFolder(
+			parent, initial.account, initial.peer, initial.title);
 		auto manifest = initial;
 		auto error = QString();
 		auto lock = std::make_shared<std::unique_ptr<QLockFile>>();
@@ -393,6 +413,7 @@ void VideoManager::Impl::prepare(Job &value) {
 		}
 		crl::on_main(weak, [=, manifest = std::move(manifest)]() mutable {
 			job->ioPending = false;
+			job->folder = folder;
 			job->manifest = std::move(manifest);
 			job->lock = std::move(*lock);
 			job->error = error;
@@ -854,6 +875,7 @@ VideoManager::Impl::Job *VideoManager::Impl::selected() {
 }
 
 void VideoManager::Impl::refresh() {
+	refreshStates();
 	if (!_panel || !_panel->isVisible()) {
 		return;
 	}
@@ -862,7 +884,7 @@ void VideoManager::Impl::refresh() {
 	while (_table->rowCount() < int(_jobs.size())) {
 		const auto row = _table->rowCount();
 		_table->insertRow(row);
-		for (const auto column : { 0, 1, 3 }) {
+		for (const auto column : { 0, 1, 3, 4 }) {
 			_table->setItem(row, column, new QTableWidgetItem());
 		}
 		_table->setCellWidget(row, 2, new QProgressBar(_table));
@@ -895,7 +917,7 @@ void VideoManager::Impl::refresh() {
 			job.speedBytes = bytes;
 			job.speedTime = now;
 		}
-		auto status = StateText(job.state);
+		auto status = VideoStateText(job.state);
 		if (job.waitUntil > now) {
 			status += u" ("_q + QString::number((job.waitUntil - now + 999) / 1000) + u" s)"_q;
 		}
@@ -917,7 +939,10 @@ void VideoManager::Impl::refresh() {
 			details += u" · "_q + firstError;
 		}
 		_table->item(row, 0)->setText(job.manifest.title);
-		_table->item(row, 0)->setToolTip(job.folder);
+		_table->item(row, 0)->setToolTip(
+			job.peer->name() + u"\nID: "_q + QString::number(job.peer->id.value)
+			+ '\n' + job.folder);
+		_table->item(row, 4)->setText(QString::number(job.peer->id.value));
 		_table->item(row, 1)->setText(status);
 		_table->item(row, 3)->setText(details);
 		_table->item(row, 3)->setToolTip(details + '\n' + job.folder);
@@ -940,6 +965,55 @@ void VideoManager::Impl::refresh() {
 		&& (job->state == State::Failed || job->state == State::Cancelled));
 }
 
+State VideoManager::Impl::state(not_null<PeerData*> peer) const {
+	Expects(&peer->session() == _session.get());
+	return _states.value(QString::number(peer->id.value), State::None);
+}
+
+void VideoManager::Impl::refreshStates() {
+	if (!_restoreAnnounced) {
+		_restoreAnnounced = true;
+		for (auto i = _states.begin(); i != _states.end(); ++i) {
+			if (const auto history = _session->data().historyLoaded(PeerId(i.key().toULongLong()))) {
+				history->updateChatListEntry();
+			}
+		}
+	}
+	auto current = VideoExportStates();
+	for (const auto &job : _jobs) {
+		auto state = job->state;
+		if (job->manifest.unavailable || ranges::any_of(job->videos, [](const Video &video) {
+			return video.entry.status == u"failed"_q;
+		})) {
+			state = State::Failed;
+		}
+		const auto key = QString::number(job->peer->id.value);
+		current[key] = CombineVideoExportStates(current.value(key, State::None), state);
+	}
+	auto changed = false;
+	for (auto i = current.begin(); i != current.end(); ++i) {
+		changed |= (_states.value(i.key(), State::None) != i.value());
+	}
+	if (!changed) {
+		return;
+	}
+	const auto previous = _states;
+	for (auto i = current.begin(); i != current.end(); ++i) {
+		_states.insert(i.key(), i.value());
+	}
+	_session->local().writePref<QString>(
+		"video-export-statuses",
+		SaveVideoExportStates(QString::number(_session->uniqueId()), _states));
+	for (const auto &job : _jobs) {
+		const auto key = QString::number(job->peer->id.value);
+		if (previous.value(key, State::None) != _states.value(key)) {
+			if (const auto history = _session->data().historyLoaded(job->peer)) {
+				history->updateChatListEntry();
+			}
+		}
+	}
+}
+
 VideoManager::VideoManager(not_null<Main::Session*> session)
 : _impl(std::make_unique<Impl>(session)) {
 }
@@ -952,6 +1026,14 @@ void VideoManager::chooseFolder(not_null<PeerData*> peer) {
 
 void VideoManager::show() {
 	_impl->show();
+}
+
+VideoExportState VideoManager::state(not_null<PeerData*> peer) const {
+	return _impl->state(peer);
+}
+
+QString VideoManager::StateText(VideoExportState state) {
+	return VideoStateText(state);
 }
 
 } // namespace Export

@@ -29,6 +29,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/history_item_components.h"
 #include "history/history_item_helpers.h"
 #include "history/history_unread_things.h"
+#include "export/export_video_manager.h"
+#include "export/export_video_badge.h"
 #include "history/view/history_view_item_preview.h"
 #include "history/view/history_view_send_action.h"
 #include "lang/lang_keys.h"
@@ -549,7 +551,32 @@ void PaintRow(
 				&& !item->isEmpty()));
 	}
 
-	const auto nameleft = context.st->nameLeft;
+	auto nameleft = context.st->nameLeft;
+	const auto exporter = history ? history->session().videoExportsIfExists() : nullptr;
+	const auto exportState = exporter
+		? exporter->state(history->peer)
+		: Export::VideoExportState::None;
+	if (exportState != Export::VideoExportState::None) {
+		const auto size = st::dialogsVideoExportSize;
+		const auto x = context.narrow ? context.st->padding.left() : nameleft;
+		const auto y = context.narrow ? context.st->padding.top() : context.st->nameTop;
+		const auto rect = style::rtlrect(x, y, size, size, context.width);
+		const auto color = context.active
+			? st::dialogsNameFgActive
+			: exportState == Export::VideoExportState::Failed
+			? st::boxTextFgError
+			: exportState == Export::VideoExportState::Complete
+			? st::callArrowFg
+			: (exportState == Export::VideoExportState::Paused
+				|| exportState == Export::VideoExportState::Cancelled)
+			? st::windowSubTextFg
+			: st::windowActiveTextFg;
+		Export::PaintVideoExportBadge(
+			p, rect, exportState, color->c, bg->color(), st::dialogsVideoExportStroke);
+		if (!context.narrow) {
+			nameleft += size + st::dialogsVideoExportSkip;
+		}
+	}
 	if (context.topicsExpanded > 0.) {
 		PaintExpandedTopicsBar(p, context.topicsExpanded);
 	}

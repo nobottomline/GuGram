@@ -197,6 +197,9 @@ public:
 		return *_sendProgressManager;
 	}
 	[[nodiscard]] Export::VideoManager &videoExports();
+	[[nodiscard]] Export::VideoManager *videoExportsIfExists() const {
+		return _videoExports.get();
+	}
 
 	[[nodiscard]] Storage::DownloadManagerMtproto &downloader() const {
 		return *_downloader;

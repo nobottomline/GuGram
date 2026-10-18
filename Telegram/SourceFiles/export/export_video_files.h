@@ -31,6 +31,11 @@ struct Manifest {
 QString Key(const Entry &entry);
 QString FileName(const Entry &entry, const QString &original);
 QString SafeName(QString name);
+QString ChatFolder(
+	const QString &parent,
+	const QString &account,
+	const QString &peer,
+	const QString &title);
 QString Read(const QString &folder, Manifest &manifest);
 QString Write(const QString &folder, const Manifest &manifest);
 bool Complete(

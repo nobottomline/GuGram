@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/weak_ptr.h"
+#include "export/export_video_status.h"
 
 namespace Main {
 class Session;
@@ -16,6 +17,8 @@ public:
 	~VideoManager();
 	void chooseFolder(not_null<PeerData*> peer);
 	void show();
+	[[nodiscard]] VideoExportState state(not_null<PeerData*> peer) const;
+	[[nodiscard]] static QString StateText(VideoExportState state);
 
 private:
 	class Impl;

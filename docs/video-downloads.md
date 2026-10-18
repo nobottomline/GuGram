@@ -8,8 +8,9 @@ through the Mac App Store is a separate codebase and has a different interface.
 ## Usage
 
 1. Open a chat's menu and select **Download all chat videos**.
-2. Choose or create a parent folder in the directory picker. The exporter creates
-   a separate subfolder containing the chat name and peer ID.
+2. Choose or create a parent folder in the directory picker. New exports use
+   `account_<account ID>/<chat name>_<peer ID>` below that folder. Existing
+   exports belonging to this account are reused in their original location.
 3. Repeat for other chats. **Chat video downloads** reopens the queue window.
 4. Select a row to pause, resume, cancel, retry, or open its destination folder.
    Closing or hiding the queue window keeps transfers running.
@@ -26,6 +27,47 @@ Its switch is in the queue window and persists per account. It changes local
 copy/save restrictions. Telegram must still provide the actual file: deleted
 media, expired media, inaccessible history, and locked paid previews cannot be
 recovered by a local UI bypass. The exporter never purchases media.
+
+## Accounts and chat-list indicators
+
+Each authenticated `Main::Session` owns its own manager, timer, request sender,
+native file loaders, and worker pool. `Main::Domain::activate` switches the UI's
+active account without destroying other authenticated sessions. No exporter work
+is tied to the active window, active account, or a window's reactive lifetime.
+Switching accounts or hiding a queue window does not pause or cancel exports;
+other accounts can start their own queues concurrently. Limits of two scans and
+three file operations apply per account. Logout cancels that account's jobs;
+quitting the application ends all queues.
+
+The queue window title includes the account name and stable account ID, and each
+row includes the chat's stable peer ID. Identical chat titles and identical peer
+IDs in different accounts do not share destination manifests or folder locks.
+Folder selection and migration checks run on workers. Matching legacy manifests
+are reused only for their own account; renamed chats in the new folder layout
+retain their existing destination.
+
+The chat list reserves a fixed space before the name for a video-export badge:
+
+- Down arrow: preparing, scanning, or downloading.
+- Green check: the last export completed.
+- Red exclamation mark: failed or unavailable media needs attention.
+- Pause bars: paused or interrupted work.
+- Cross: cancelled work.
+
+Narrow chat lists show the badge in the avatar's upper corner. Online/unread
+badges retain their usual locations. Screen-reader row names include the export
+state. The queue contains the symbol legend and per-file error details.
+
+When one chat has several destination jobs, an error takes precedence over its
+other states; otherwise active work takes precedence over pause/cancellation,
+and completion is shown only when no incomplete destination takes precedence.
+An attention badge does not stop other videos from downloading.
+
+Last-known badge states persist in each account's encrypted preferences. After
+restart, previously active states become paused, never a false running or
+completed state. Select the same chat and parent folder to resume using verified
+completed files. A green badge records the last export result; it is not a
+continuous audit of files moved or deleted outside the application.
 
 ## Design and invariants
 
@@ -90,6 +132,13 @@ SHA-256 verification, same-size corruption, truncation, interrupted/cancelled
 copies, atomic publication, recovery between receipt and publication, collisions,
 64-bit IDs, filename sanitization, long Unicode filenames, mismatched accounts,
 invalid manifests, traversal, and symbolic links.
+
+Additional tests exercise two account namespaces with identical chat IDs and
+titles, simultaneous folder locks, rejection of another account's manifest,
+legacy-folder reuse, renamed chats, independent status caches, interrupted-state
+recovery, status precedence across multiple destinations, and production badge
+rendering at several sizes without relying on color. These are local filesystem,
+state and rendering checks, not authenticated MTProto account-switch tests.
 
 ```sh
 cmake -S tests/video_export -B out/video-export-tests \

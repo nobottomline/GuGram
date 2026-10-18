@@ -57,6 +57,49 @@ QString FileName(const Entry &entry, const QString &original) {
 	return entry.peer + '_' + entry.message + '_' + entry.document + '_' + name;
 }
 
+QString ChatFolder(
+		const QString &parent,
+		const QString &account,
+		const QString &peer,
+		const QString &title) {
+	const auto accountFolder = QDir(parent).filePath(QStringLiteral("account_") + account);
+	const auto name = SafeName(title) + '_' + peer;
+	const auto legacy = QDir(parent).filePath(name);
+	const auto belongs = [&](const QString &folder) {
+		auto file = QFile(ManifestPath(folder));
+		if (QFileInfo(folder).isSymLink() || QFileInfo(file).isSymLink()
+			|| !file.open(QIODevice::ReadOnly)) {
+			return false;
+		}
+		const auto root = QJsonDocument::fromJson(file.readAll()).object();
+		return root.value(QStringLiteral("schema")).toInt() == 1
+			&& root.value(QStringLiteral("account")).toString() == account
+			&& root.value(QStringLiteral("peer")).toString() == peer;
+	};
+	const auto entries = QDir(accountFolder).entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+	for (const auto &entry : entries) {
+		if (entry.endsWith('_' + peer)) {
+			const auto folder = QDir(accountFolder).filePath(entry);
+			if (belongs(folder)) {
+				return folder;
+			}
+		}
+	}
+	if (belongs(legacy)) {
+		return legacy;
+	}
+	const auto oldEntries = QDir(parent).entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+	for (const auto &entry : oldEntries) {
+		if (entry.endsWith('_' + peer)) {
+			const auto folder = QDir(parent).filePath(entry);
+			if (belongs(folder)) {
+				return folder;
+			}
+		}
+	}
+	return QDir(accountFolder).filePath(name);
+}
+
 QString Read(const QString &folder, Manifest &manifest) {
 	auto file = QFile(ManifestPath(folder));
 	if (QFileInfo(file).isSymLink()) {
