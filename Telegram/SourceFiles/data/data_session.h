@@ -474,6 +474,9 @@ public:
 	[[nodiscard]] CreditsSubsRebuilderPtr createCreditsSubsRebuilder();
 	[[nodiscard]] CreditsSubsRebuilderPtr activeCreditsSubsRebuilder() const;
 
+	[[nodiscard]] bool showRestrictedContent() const;
+	void setShowRestrictedContent(bool enabled);
+
 	void registerRestricted(
 		not_null<const HistoryItem*> item,
 		const QString &reason);

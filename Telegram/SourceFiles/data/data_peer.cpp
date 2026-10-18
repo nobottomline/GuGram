@@ -116,6 +116,9 @@ UnavailableReason UnavailableReason::Sensitive() {
 QString UnavailableReason::Compute(
 		not_null<Main::Session*> session,
 		const std::vector<UnavailableReason> &list) {
+	if (session->data().showRestrictedContent()) {
+		return QString();
+	}
 	const auto &skip = IgnoredReasons(session);
 	auto &&filtered = ranges::views::all(
 		list
@@ -129,7 +132,7 @@ QString UnavailableReason::Compute(
 
 bool UnavailableReason::IgnoreSensitiveMark(
 		not_null<Main::Session*> session) {
-	return ranges::contains(
+	return session->data().showRestrictedContent() || ranges::contains(
 			IgnoredReasons(session),
 			UnavailableReason::Sensitive().reason);
 }

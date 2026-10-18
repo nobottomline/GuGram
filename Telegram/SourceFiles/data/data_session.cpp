@@ -2333,6 +2333,30 @@ void Session::requestItemTextRefresh(not_null<HistoryItem*> item) {
 	}
 }
 
+bool Session::showRestrictedContent() const {
+	return session().local().readPref<bool>("show-restricted-content", true);
+}
+
+void Session::setShowRestrictedContent(bool enabled) {
+	if (enabled == showRestrictedContent()) {
+		return;
+	}
+	session().local().writePref<bool>("show-restricted-content", enabled);
+	auto refresh = std::vector<not_null<const HistoryItem*>>();
+	refresh.reserve(_possiblyRestricted.size());
+	for (const auto &[item, reasons] : _possiblyRestricted) {
+		refresh.push_back(item);
+	}
+	for (const auto item : refresh) {
+		requestItemViewRefresh(item);
+	}
+	for (const auto &[id, peer] : _peers) {
+		session().changes().peerUpdated(
+			peer.get(),
+			PeerUpdate::Flag::UnavailableReason);
+	}
+}
+
 void Session::registerRestricted(
 		not_null<const HistoryItem*> item,
 		const QString &reason) {

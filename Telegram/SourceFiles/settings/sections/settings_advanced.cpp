@@ -1279,6 +1279,26 @@ void BuildExportSection(SectionBuilder &builder) {
 	});
 }
 
+void BuildContentRestrictionsSection(SectionBuilder &builder) {
+	const auto session = builder.session();
+	builder.addSkip();
+	builder.addDivider();
+	builder.addSkip();
+	const auto toggle = builder.addButton({
+		.id = u"advanced/show_restricted_content"_q,
+		.title = tr::lng_settings_show_restricted_content(),
+		.st = &st::settingsButtonNoIcon,
+		.toggled = rpl::single(session->data().showRestrictedContent()),
+		.keywords = { u"restricted"_q, u"content"_q, u"gugram"_q },
+	});
+	if (toggle) {
+		toggle->toggledValue(
+		) | rpl::on_next([=](bool enabled) {
+			session->data().setShowRestrictedContent(enabled);
+		}, toggle->lifetime());
+	}
+}
+
 void BuildScreenReaderSection(SectionBuilder &builder) {
 	const auto detected = base::ScreenReaderState::Instance()->active();
 	const auto disabled = Ui::ScreenReaderModeDisabled();
@@ -1351,6 +1371,7 @@ const auto kMeta = BuildHelper({
 	BuildSystemIntegrationSection(builder);
 	BuildPerformanceSection(builder);
 	BuildSpellcheckerSection(builder);
+	BuildContentRestrictionsSection(builder);
 	BuildScreenReaderSection(builder);
 	if (autoUpdate) {
 		BuildUpdateSection(builder, false);
