@@ -47,11 +47,11 @@ rpl::producer<TextWithEntities> Text2() {
 		lt_gpl_link,
 		rpl::single(tr::link(
 			"GNU GPL",
-			"https://github.com/nobottomline/GoGram/blob/main/LICENSE")),
+			"https://github.com/nobottomline/GuGram/blob/main/LICENSE")),
 		lt_github_link,
 		rpl::single(tr::link(
 			"GitHub",
-			"https://github.com/nobottomline/GoGram")),
+			"https://github.com/nobottomline/GuGram")),
 		tr::marked);
 }
 

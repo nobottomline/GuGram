@@ -1,6 +1,6 @@
-# GoGram chat video downloads
+# GuGram chat video downloads
 
-GoGram is based on Telegram Desktop **7.2.9**, upstream commit
+GuGram is based on Telegram Desktop **7.2.9**, upstream commit
 `fb2e33209517e1a34637d837bfadb3783f2fd59c`. It is the cross-platform C++/Qt
 client. The native Telegram for macOS distributed
 through the Mac App Store is a separate codebase and has a different interface.
@@ -14,7 +14,7 @@ through the Mac App Store is a separate codebase and has a different interface.
 3. Repeat for other chats. **Chat video downloads** reopens the queue window.
 4. Select a row to pause, resume, cancel, retry, or open its destination folder.
    Closing or hiding the queue window keeps transfers running.
-5. After restarting GoGram, select the same chat and parent folder again.
+5. After restarting GuGram, select the same chat and parent folder again.
    Completed files are verified and reused; remaining videos are downloaded.
 
 **Complete** means history traversal ended and every discovered video was saved.

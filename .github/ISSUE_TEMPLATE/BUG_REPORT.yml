@@ -33,7 +33,7 @@ body:
       required: true
   - type: input
     attributes:
-      label: GoGram version or commit
+      label: GuGram version or commit
       description: |
         Include the exact version and, for source builds, the commit hash.
     validations:
@@ -43,7 +43,7 @@ body:
       label: Installation source
       multiple: false
       options:
-        - Built from GoGram source
+        - Built from GuGram source
         - Local macOS installer
         - Other source
     validations:

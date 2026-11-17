@@ -1,6 +1,6 @@
-# GoGram Desktop
+# GuGram Desktop
 
-GoGram is an independent, open-source fork of [Telegram Desktop](https://github.com/telegramdesktop/tdesktop), based on version **7.2.9**. It uses the Telegram API and MTProto and is not affiliated with Telegram.
+GuGram is an independent, open-source fork of [Telegram Desktop](https://github.com/telegramdesktop/tdesktop), based on version **7.2.9**. It uses the Telegram API and MTProto and is not affiliated with Telegram.
 
 ## Features
 
@@ -12,14 +12,14 @@ GoGram is an independent, open-source fork of [Telegram Desktop](https://github.
 
 Get started from a chat's **Download all chat videos** menu. The content-display switch is under **Settings → Advanced**; the copy-protection switch is in the video-download queue.
 
-GoGram can only display or download content that Telegram returns or that is already available locally. Server permissions, unavailable files, and paid-media access still apply.
+GuGram can only display or download content that Telegram returns or that is already available locally. Server permissions, unavailable files, and paid-media access still apply.
 
 Details: [video downloads](docs/video-downloads.md) · [content settings and macOS installation](docs/restricted-content.md) · [WEB proxy design](docs/web-proxy-plan.md).
 
 ## Build
 
 ```sh
-git clone --recursive https://github.com/nobottomline/GoGram.git tdesktop
+git clone --recursive https://github.com/nobottomline/GuGram.git tdesktop
 cd tdesktop
 ```
 
@@ -33,7 +33,7 @@ The fork has been built locally on macOS ARM64. Ready-to-install releases are no
 
 ## Contributing
 
-Bug reports and focused pull requests are welcome in [this repository](https://github.com/nobottomline/GoGram). Include your platform, build version, steps to reproduce, and relevant redacted diagnostics. See [contributing](.github/CONTRIBUTING.md).
+Bug reports and focused pull requests are welcome in [this repository](https://github.com/nobottomline/GuGram). Include your platform, build version, steps to reproduce, and relevant redacted diagnostics. See [contributing](.github/CONTRIBUTING.md).
 
 ## License
 
