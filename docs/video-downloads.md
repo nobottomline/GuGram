@@ -1,8 +1,8 @@
-# Chat video downloads
+# GoGram chat video downloads
 
-This local fork is based on Telegram Desktop **7.2.9**, upstream commit
-`fb2e33209517e1a34637d837bfadb3783f2fd59c`. The previous checkout was 6.4.3 beta.
-It is the cross-platform C++/Qt client. The native Telegram for macOS distributed
+GoGram is based on Telegram Desktop **7.2.9**, upstream commit
+`fb2e33209517e1a34637d837bfadb3783f2fd59c`. It is the cross-platform C++/Qt
+client. The native Telegram for macOS distributed
 through the Mac App Store is a separate codebase and has a different interface.
 
 ## Usage
@@ -14,7 +14,7 @@ through the Mac App Store is a separate codebase and has a different interface.
 3. Repeat for other chats. **Chat video downloads** reopens the queue window.
 4. Select a row to pause, resume, cancel, retry, or open its destination folder.
    Closing or hiding the queue window keeps transfers running.
-5. After restarting Telegram, select the same chat and parent folder again.
+5. After restarting GoGram, select the same chat and parent folder again.
    Completed files are verified and reused; remaining videos are downloaded.
 
 **Complete** means history traversal ended and every discovered video was saved.
@@ -22,7 +22,7 @@ Errors and unavailable media produce **Needs attention**, with counts in the
 window and per-file details in `video-export.json`. Newly arriving messages are
 outside the history snapshot; run the same chat again to include them.
 
-Copy protection bypass is enabled by default, matching the existing local fork.
+Copy protection bypass is enabled by default.
 Its switch is in the queue window and persists per account. It changes local
 copy/save restrictions. Telegram must still provide the actual file: deleted
 media, expired media, inaccessible history, and locked paid previews cannot be
@@ -119,9 +119,8 @@ not start network work.
 
 ## Existing customization migration
 
-The pre-update uncommitted customization was preserved in a Git stash and
-`/tmp/tdesktop-before-update.patch`. Copy/save protection bypass and local deleted
-message display were ported to the new upstream implementation.
+Copy/save protection controls and local deleted-message display were ported to
+the updated upstream implementation.
 
 Upstream now uses all 64 message-flag bits. The old `DeletedByOther` bit conflicted
 with `HasUnreadPollVote`; deleted-message display now uses a separate field.

@@ -33,11 +33,9 @@ body:
       required: true
   - type: input
     attributes:
-      label: Version of Telegram Desktop
+      label: GoGram version or commit
       description: |
-        Write EXACT version number (e.g. 5.1.2).
-        * 🛑 DO NOT WRITE "LATEST". We will instantly close the issue.
-        * 🛑 LINUX REPO VERSIONS ARE NOT SUPPORTED. Go to your distro's tracker (unless you are the distro maintainer).
+        Include the exact version and, for source builds, the commit hash.
     validations:
       required: true
   - type: dropdown
@@ -45,24 +43,11 @@ body:
       label: Installation source
       multiple: false
       options:
-        - Downloaded from desktop.telegram.org or GitHub
-        - Microsoft Store
-        - Mac App Store
-        - Flatpak
-        - Snap
-        - Linux package manager (apt, dnf, pacman, etc)
+        - Built from GoGram source
+        - Local macOS installer
         - Other source
     validations:
       required: true
-  - type: input
-    attributes:
-      label: Crash ID
-      description: |
-        If the app crashed, we need a Crash ID.
-        1. Go to Settings -> Advanced
-        2. Enable "Install beta versions"
-        3. Reproduce the crash
-        4. Copy the Crash ID on next launch
   - type: textarea
     attributes:
       label: Logs
@@ -70,5 +55,5 @@ body:
         Type the word `viewlogs`
         [directly into your settings menu](https://github.com/telegramdesktop/tdesktop/wiki/Cheat-Codes)
         to open the logs folder.
-      placeholder: Insert log.txt here
+      placeholder: Paste relevant diagnostics after removing personal data, credentials, and proxy secrets.
       render: shell

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install the local GuGram Desktop build without replacing another Telegram."""
+"""Install the local GoGram Desktop build without replacing another Telegram."""
 
 import argparse
 from datetime import datetime, timezone
@@ -12,7 +12,8 @@ import sys
 import tempfile
 
 
-LAUNCHER_MARKER = "# GuGram Desktop local launcher"
+LAUNCHER_MARKER = "# GoGram Desktop local launcher"
+LEGACY_LAUNCHER_MARKER = "# GuGram Desktop local launcher"
 
 
 def launcher_text(app: Path) -> str:
@@ -20,7 +21,7 @@ def launcher_text(app: Path) -> str:
 {LAUNCHER_MARKER}
 app={shlex.quote(str(app))}
 if [ ! -d "$app" ]; then
-    echo "GuGram Desktop is not installed at $app" >&2
+    echo "GoGram Desktop is not installed at $app" >&2
     exit 1
 fi
 case "${{1-}}" in
@@ -45,12 +46,15 @@ def install(source: Path, app_dir: Path, bin_dir: Path) -> Path:
     executable = source / "Contents/MacOS/Telegram"
     if not executable.is_file():
         raise ValueError(f"Build Telegram first: missing {executable}")
-    target = app_dir / "GuGram Desktop.app"
+    target = app_dir / "GoGram Desktop.app"
     command = bin_dir / "tg"
     if target.is_symlink() or command.is_symlink():
         raise ValueError("Refusing to replace a symbolic link at the install destination.")
-    if command.exists() and LAUNCHER_MARKER not in command.read_text():
-        raise ValueError(f"An unrelated command already exists: {command}")
+    if command.exists():
+        launcher = command.read_text()
+        if not any(marker in launcher
+                   for marker in (LAUNCHER_MARKER, LEGACY_LAUNCHER_MARKER)):
+            raise ValueError(f"An unrelated command already exists: {command}")
     if target.exists():
         with (target / "Contents/Info.plist").open("rb") as file:
             if plistlib.load(file).get("CFBundleIdentifier") != "com.gugram.desktop":
@@ -58,7 +62,7 @@ def install(source: Path, app_dir: Path, bin_dir: Path) -> Path:
     app_dir.mkdir(parents=True, exist_ok=True)
     bin_dir.mkdir(parents=True, exist_ok=True)
     backup = None
-    with tempfile.TemporaryDirectory(prefix=".gugram-install-", dir=app_dir) as temporary:
+    with tempfile.TemporaryDirectory(prefix=".gogram-install-", dir=app_dir) as temporary:
         staged = Path(temporary) / target.name
         subprocess.run(["/usr/bin/ditto", str(source), str(staged)], check=True)
         info_path = staged / "Contents/Info.plist"
@@ -66,9 +70,9 @@ def install(source: Path, app_dir: Path, bin_dir: Path) -> Path:
             info = plistlib.load(file)
         info.update({
             "CFBundleIdentifier": "com.gugram.desktop",
-            "CFBundleName": "GuGram Desktop",
-            "CFBundleDisplayName": "GuGram Desktop",
-            "CFBundleGetInfoString": "GuGram Desktop local custom Telegram client",
+            "CFBundleName": "GoGram Desktop",
+            "CFBundleDisplayName": "GoGram Desktop",
+            "CFBundleGetInfoString": "GoGram Desktop local custom Telegram client",
             "LSMinimumSystemVersion": "15.0",
         })
         info.pop("CFBundleURLTypes", None)
@@ -82,7 +86,7 @@ def install(source: Path, app_dir: Path, bin_dir: Path) -> Path:
         subprocess.run(["/usr/bin/codesign", "--verify", "--strict", str(staged)], check=True)
         if target.exists():
             stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-            backup = app_dir / f".GuGram Desktop.previous-{stamp}.app"
+            backup = app_dir / f".GoGram Desktop.previous-{stamp}.app"
             target.rename(backup)
         try:
             staged.rename(target)

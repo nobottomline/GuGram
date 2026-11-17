@@ -1289,7 +1289,7 @@ void BuildContentRestrictionsSection(SectionBuilder &builder) {
 		.title = tr::lng_settings_show_restricted_content(),
 		.st = &st::settingsButtonNoIcon,
 		.toggled = rpl::single(session->data().showRestrictedContent()),
-		.keywords = { u"restricted"_q, u"content"_q, u"gugram"_q },
+		.keywords = { u"restricted"_q, u"content"_q, u"gogram"_q },
 	});
 	if (toggle) {
 		toggle->toggledValue(

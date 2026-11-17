@@ -1,45 +1,43 @@
-# [Telegram Desktop][telegram_desktop] – Official Messenger
+# GoGram Desktop
 
-This is the complete source code and the build instructions for the official [Telegram][telegram] messenger desktop client, based on the [Telegram API][telegram_api] and the [MTProto][telegram_proto] secure protocol.
+GoGram is an independent, open-source fork of [Telegram Desktop](https://github.com/telegramdesktop/tdesktop), based on version **7.2.9**. It uses the Telegram API and MTProto and is not affiliated with Telegram.
 
-[![Version](https://badge.fury.io/gh/telegramdesktop%2Ftdesktop.svg)](https://github.com/telegramdesktop/tdesktop/releases)
-[![Build Status](https://github.com/telegramdesktop/tdesktop/workflows/Windows./badge.svg)](https://github.com/telegramdesktop/tdesktop/actions)
-[![Build Status](https://github.com/telegramdesktop/tdesktop/workflows/MacOS./badge.svg)](https://github.com/telegramdesktop/tdesktop/actions)
-[![Build Status](https://github.com/telegramdesktop/tdesktop/workflows/Linux./badge.svg)](https://github.com/telegramdesktop/tdesktop/actions)
-[![Built with Depot](https://img.shields.io/badge/Built%20with-Depot.dev-46A75A)](https://depot.dev)
+## Features
 
-[![Preview of Telegram Desktop][preview_image]][preview_image_url]
+- **Background video downloads:** download all available videos from a chat, with pause, resume, retry, verified file reuse, and a persistent export manifest.
+- **Multiple accounts and queues:** downloads continue while you switch chats or accounts. Chat-list badges show progress, completion, and errors.
+- **Content controls:** show restricted chats and messages, hide sensitive-media covers, and optionally bypass local copy, save, and forwarding restrictions.
+- **Deleted-message indicators:** keep already loaded incoming messages visible when a deletion update arrives, marked as deleted. This does not recover messages from the server or provide a permanent archive.
+- **Experimental WEB proxy:** inherited HTTPS/WebView transport with browser fallback; requires a compatible relay server.
 
-The source code is published under GPLv3 with OpenSSL exception, the license is available [here][license].
+Get started from a chat's **Download all chat videos** menu. The content-display switch is under **Settings → Advanced**; the copy-protection switch is in the video-download queue.
 
-## Supported systems
+GoGram can only display or download content that Telegram returns or that is already available locally. Server permissions, unavailable files, and paid-media access still apply.
 
-The latest version is available for
+Details: [video downloads](docs/video-downloads.md) · [content settings and macOS installation](docs/restricted-content.md) · [WEB proxy design](docs/web-proxy-plan.md).
 
-* [Windows 7 and above (64 bit)](https://telegram.org/dl/desktop/win64) ([portable](https://telegram.org/dl/desktop/win64_portable))
-* [Windows 7 and above (32 bit)](https://telegram.org/dl/desktop/win) ([portable](https://telegram.org/dl/desktop/win_portable))
-* [macOS 10.13 and above](https://telegram.org/dl/desktop/mac)
-* [Linux static build for 64 bit](https://telegram.org/dl/desktop/linux)
-* [Snap](https://snapcraft.io/telegram-desktop)
-* [Flatpak](https://flathub.org/apps/details/org.telegram.desktop)
+## Build
 
-## Old system versions
+```sh
+git clone --recursive https://github.com/nobottomline/GoGram.git tdesktop
+cd tdesktop
+```
 
-Version **4.9.9** was the last that supports older systems
+Provide your own [Telegram API credentials](docs/api_credentials.md), then follow the platform instructions:
 
-* [macOS 10.12](https://updates.tdesktop.com/tmac/tsetup.4.9.9.dmg)
-* [Linux with glibc < 2.28 static build](https://updates.tdesktop.com/tlinux/tsetup.4.9.9.tar.xz)
+- [macOS](docs/building-mac.md)
+- [Windows](docs/building-win.md)
+- [Linux using Docker](docs/building-linux.md)
 
-Version **2.4.4** was the last that supports older systems
+The fork has been built locally on macOS ARM64. Ready-to-install releases are not provided yet; Windows/Linux builds and authenticated video-export scenarios still need qualification. The local macOS installer requires a built `out/Telegram.app` and keeps the existing account-data location. See the [installation guide](docs/restricted-content.md).
 
-* [OS X 10.10 and 10.11](https://updates.tdesktop.com/tosx/tsetup-osx.2.4.4.dmg)
-* [Linux static build for 32 bit](https://updates.tdesktop.com/tlinux32/tsetup32.2.4.4.tar.xz)
+## Contributing
 
-Version **1.8.15** was the last that supports older systems
+Bug reports and focused pull requests are welcome in [this repository](https://github.com/nobottomline/GoGram). Include your platform, build version, steps to reproduce, and relevant redacted diagnostics. See [contributing](.github/CONTRIBUTING.md).
 
-* [Windows XP and Vista](https://updates.tdesktop.com/tsetup/tsetup.1.8.15.exe) ([portable](https://updates.tdesktop.com/tsetup/tportable.1.8.15.zip))
-* [OS X 10.8 and 10.9](https://updates.tdesktop.com/tmac/tsetup.1.8.15.dmg)
-* [OS X 10.6 and 10.7](https://updates.tdesktop.com/tmac32/tsetup32.1.8.15.dmg)
+## License
+
+[GPLv3 with the upstream OpenSSL exception](LICENSE). Original Telegram Desktop copyright notices and third-party licenses are retained. Thanks to the Telegram Desktop contributors and the libraries below.
 
 ## Third-party
 
@@ -66,34 +64,4 @@ Version **1.8.15** was the last that supports older systems
 * CMake ([New BSD License](https://github.com/Kitware/CMake/blob/master/Copyright.txt))
 * Hunspell ([LGPL](https://github.com/hunspell/hunspell/blob/master/COPYING.LESSER))
 * Ada ([Apache License 2.0](https://github.com/ada-url/ada/blob/main/LICENSE-APACHE))
-
-## Build instructions
-
-* [Windows (32-bit and 64-bit)][win]
-* [macOS][mac]
-* [GNU/Linux using Docker][linux]
-
-[//]: # (LINKS)
-[telegram]: https://telegram.org
-[telegram_desktop]: https://desktop.telegram.org
-[telegram_api]: https://core.telegram.org
-[telegram_proto]: https://core.telegram.org/mtproto
-[license]: LICENSE
-[win]: docs/building-win.md
-[mac]: docs/building-mac.md
-[linux]: docs/building-linux.md
-[preview_image]: https://github.com/telegramdesktop/tdesktop/blob/dev/docs/assets/preview.png "Preview of Telegram Desktop"
-[preview_image_url]: https://raw.githubusercontent.com/telegramdesktop/tdesktop/dev/docs/assets/preview.png
-
-## Thanks to
-
-<a href="https://depot.dev">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://depot.dev/assets/brand/1693758816/depot-logo-horizontal-on-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://depot.dev/assets/brand/1693758816/depot-logo-horizontal-on-light.svg">
-    <img alt="Depot" src="https://depot.dev/assets/brand/1693758816/depot-logo-horizontal-on-light.svg" width="150">
-  </picture>
-</a>
-
-CI infrastructure sponsored by [Depot](https://depot.dev) — fast GitHub Actions runners.
 
